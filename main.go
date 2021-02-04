@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"database/sql"
 	"fmt"
 	"log"
@@ -200,9 +199,8 @@ func main() {
 	dataChan := make(chan []byte)
 
 	go readWrapper(dataChan, errorChan)
-	r := bytes.NewBuffer(make([]byte, 0, 1024))
+	// r := bytes.NewBuffer(make([]byte, 0, 1024))
 
-	fmt.Printf("(K) Kilo\r\n")
 	fmt.Printf("(E) Edit\r\n")
 	fmt.Printf("(Q) Quit\r\n\n")
 	fmt.Printf("Cmd? ")
@@ -213,34 +211,10 @@ func main() {
 			if menu == 1 {
 				t := strings.TrimSuffix(strings.TrimSuffix(string(data), "\r\n"), "\n")
 				switch t {
-				default:
-					fmt.Println("client hit invalid key...")
-					// remove the continue since the menu prints at the bottom
-					// continue
-				case "E", "e":
-					menu = 2
-					// notice the message here and the break instead of the continue.
-					// if we use continue instead it will wait until your user sends something
-					// with a break instead it will fall through and start collecting the text
-					fmt.Printf("\r\n\nType a mesage. Escape to quit. \r\n\n")
-					break
+				// default:
+				// 	fmt.Println("client hit invalid key...")
 				case "Q", "q":
-					// fmt.Printf("Bye!")
-				case "K", "k":
-					menu = 3
 					kilo.Start(sigPipes)
-				}
-
-			}
-
-			if menu == 2 {
-				// Get input from user
-				fmt.Printf(string(data))
-				if bytes.Equal(data, []byte("\r\n")) || bytes.Equal(data, []byte("\r")) {
-					fmt.Printf("you typed: %q\r\n", r.String())
-					r.Reset()
-					menu = 1
-
 					fmt.Println("\033[H\033[2J")
 					fmt.Printf("Your current Auto Signature:\r\n\n")
 					replaced := replaceColors(currentSig.value)
@@ -251,25 +225,27 @@ func main() {
 					fmt.Printf("(E) Edit\r\n")
 					fmt.Printf("(Q) Quit\r\n\n")
 					fmt.Printf("Cmd? ")
-					// break
+					menu = 2
+				case "E", "e":
+					kilo.Start(sigPipes)
+					fmt.Println("\033[H\033[2J")
+					fmt.Printf("Your current Auto Signature:\r\n\n")
+					replaced := replaceColors(currentSig.value)
+					fmt.Println(replaced)
+
+					fmt.Println("\u001b[0m")
+
+					fmt.Printf("(E) Edit\r\n")
+					fmt.Printf("(Q) Quit\r\n\n")
+					fmt.Printf("Cmd? ")
+					menu = 1
 				}
-				// ESC aborts and returns to BBS
-				if bytes.Equal(data, []byte("\033")) || bytes.Equal(data, []byte("\033\r\n")) || bytes.Equal(data, []byte("\033\r")) || bytes.Equal(data, []byte("\033\n")) {
-					fmt.Printf("\r\nAborted!\r\n")
-					r.Reset()
-					break
-				}
-				r.Write(data)
-				// otherwise continue printing menu for invalid submissions
 				continue
 			}
-
-			if menu == 1 {
-				// Get input from user
-				fmt.Printf(string(data))
-				r.Write(data)
-				// otherwise continue printing menu for invalid submissions
-				continue
+			if menu == 2 {
+				fmt.Printf("\r\n\nReturning...\r\n")
+				time.Sleep(200 * time.Millisecond)
+				os.Exit(0)
 			}
 
 		case err := <-errorChan:
@@ -278,8 +254,7 @@ func main() {
 		}
 		break
 	}
-
 	fmt.Printf("\r\n\nReturning...\r\n")
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 }

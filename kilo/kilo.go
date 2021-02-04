@@ -48,6 +48,8 @@ const (
 	HL_HIGHLIGHT_STRINGS = 1 << iota
 )
 
+var exit = 0
+
 /*** data ***/
 
 type editorSyntax struct {
@@ -279,7 +281,7 @@ func getWindowSize(rows *int, cols *int) int {
 		io.WriteString(os.Stdout, "\x1b[999C\x1b[999B")
 		return getCursorPosition(rows, cols)
 	} else {
-		*rows = int(w.Row)
+		*rows = int(w.Row - 1)
 		*cols = int(w.Col)
 		return 0
 	}
@@ -667,107 +669,109 @@ func editorOpen(signature string) {
 }
 
 func editorSave() {
-	if E.filename == "" {
-		E.filename = editorPrompt("Save as: %q", nil)
-		if E.filename == "" {
-			editorSetStatusMessage("Save aborted")
-			return
-		}
-		editorSelectSyntaxHighlight()
-	}
-	buf, len := editorRowsToString()
-	fp, e := os.OpenFile(E.filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	if e != nil {
-		editorSetStatusMessage("Can't save! file open error %s", e)
-		return
-	}
-	defer fp.Close()
-	n, err := io.WriteString(fp, buf)
-	if err == nil {
-		if n == len {
-			E.dirty = false
-			editorSetStatusMessage("%d bytes written to disk", len)
-		} else {
-			editorSetStatusMessage(fmt.Sprintf("wanted to write %d bytes to file, wrote %d", len, n))
-		}
-		return
-	}
-	editorSetStatusMessage("Can't save! I/O error %s", err)
+	editorSetStatusMessage("Saving... CTRL-Q to Quit.")
+	E.dirty = false
+	// if E.filename == "" {
+	// 	E.filename = editorPrompt("Save as: %q", nil)
+	// 	if E.filename == "" {
+	// 		editorSetStatusMessage("Save aborted")
+	// 		return
+	// 	}
+	// 	editorSelectSyntaxHighlight()
+	// }
+	// buf, len := editorRowsToString()
+	// fp, e := os.OpenFile(E.filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	// if e != nil {
+	// 	editorSetStatusMessage("Can't save! file open error %s", e)
+	// 	return
+	// }
+	// defer fp.Close()
+	// n, err := io.WriteString(fp, buf)
+	// if err == nil {
+	// 	if n == len {
+	// 		E.dirty = false
+	// 		editorSetStatusMessage("%d bytes written to disk", len)
+	// 	} else {
+	// 		editorSetStatusMessage(fmt.Sprintf("wanted to write %d bytes to file, wrote %d", len, n))
+	// 	}
+	// 	return
+	// }
+	// editorSetStatusMessage("Can't save! I/O error %s", err)
 }
 
 /*** find ***/
 
-var lastMatch int = -1
-var direction int = 1
-var savedHlLine int
-var savedHl []byte
+// var lastMatch int = -1
+// var direction int = 1
+// var savedHlLine int
+// var savedHl []byte
 
-func editorFindCallback(qry []byte, key int) {
+// func editorFindCallback(qry []byte, key int) {
 
-	if savedHlLine > 0 {
-		copy(E.rows[savedHlLine].hl, savedHl)
-		savedHlLine = 0
-		savedHl = nil
-	}
+// 	if savedHlLine > 0 {
+// 		copy(E.rows[savedHlLine].hl, savedHl)
+// 		savedHlLine = 0
+// 		savedHl = nil
+// 	}
 
-	if key == '\r' || key == '\x1b' {
-		lastMatch = -1
-		direction = 1
-		return
-	} else if key == ARROW_RIGHT || key == ARROW_DOWN {
-		direction = 1
-	} else if key == ARROW_LEFT || key == ARROW_UP {
-		direction = -1
-	} else {
-		lastMatch = -1
-		direction = 1
-	}
+// 	if key == '\r' || key == '\x1b' {
+// 		lastMatch = -1
+// 		direction = 1
+// 		return
+// 	} else if key == ARROW_RIGHT || key == ARROW_DOWN {
+// 		direction = 1
+// 	} else if key == ARROW_LEFT || key == ARROW_UP {
+// 		direction = -1
+// 	} else {
+// 		lastMatch = -1
+// 		direction = 1
+// 	}
 
-	if lastMatch == -1 {
-		direction = 1
-	}
-	current := lastMatch
+// 	if lastMatch == -1 {
+// 		direction = 1
+// 	}
+// 	current := lastMatch
 
-	for _ = range E.rows {
-		current += direction
-		if current == -1 {
-			current = E.numRows - 1
-		} else if current == E.numRows {
-			current = 0
-		}
-		row := &E.rows[current]
-		x := bytes.Index(row.render, qry)
-		if x > -1 {
-			lastMatch = current
-			E.cy = current
-			E.cx = editorRowRxToCx(row, x)
-			E.rowoff = E.numRows
-			savedHlLine = current
-			savedHl = make([]byte, row.rsize)
-			copy(savedHl, row.hl)
-			max := x + len(qry)
-			for i := x; i < max; i++ {
-				row.hl[i] = HL_MATCH
-			}
-			break
-		}
-	}
-}
+// 	for _ = range E.rows {
+// 		current += direction
+// 		if current == -1 {
+// 			current = E.numRows - 1
+// 		} else if current == E.numRows {
+// 			current = 0
+// 		}
+// 		row := &E.rows[current]
+// 		x := bytes.Index(row.render, qry)
+// 		if x > -1 {
+// 			lastMatch = current
+// 			E.cy = current
+// 			E.cx = editorRowRxToCx(row, x)
+// 			E.rowoff = E.numRows
+// 			savedHlLine = current
+// 			savedHl = make([]byte, row.rsize)
+// 			copy(savedHl, row.hl)
+// 			max := x + len(qry)
+// 			for i := x; i < max; i++ {
+// 				row.hl[i] = HL_MATCH
+// 			}
+// 			break
+// 		}
+// 	}
+// }
 
-func editorFind() {
-	savedCx := E.cx
-	savedCy := E.cy
-	savedColoff := E.coloff
-	savedRowoff := E.rowoff
-	query := editorPrompt("Search: %s (ESC/Arrows/Enter)",
-		editorFindCallback)
-	if query == "" {
-		E.cx = savedCx
-		E.cy = savedCy
-		E.coloff = savedColoff
-		E.rowoff = savedRowoff
-	}
-}
+// func editorFind() {
+// 	savedCx := E.cx
+// 	savedCy := E.cy
+// 	savedColoff := E.coloff
+// 	savedRowoff := E.rowoff
+// 	query := editorPrompt("Search: %s (ESC/Arrows/Enter)",
+// 		editorFindCallback)
+// 	if query == "" {
+// 		E.cx = savedCx
+// 		E.cy = savedCy
+// 		E.coloff = savedColoff
+// 		E.rowoff = savedRowoff
+// 	}
+// }
 
 /*** input ***/
 
@@ -863,7 +867,9 @@ func editorProcessKeypress() {
 		io.WriteString(os.Stdout, "\x1b[2J")
 		io.WriteString(os.Stdout, "\x1b[H")
 		disableRawMode()
-		os.Exit(0)
+		// os.Exit(0)
+		exit = 1
+		break
 	case ('s' & 0x1f):
 		editorSave()
 	case HOME_KEY:
@@ -872,8 +878,8 @@ func editorProcessKeypress() {
 		if E.cy < E.numRows {
 			E.cx = E.rows[E.cy].size
 		}
-	case ('f' & 0x1f):
-		editorFind()
+	// case ('f' & 0x1f):
+	// 	editorFind()
 	case ('h' & 0x1f), BACKSPACE, DEL_KEY:
 		if c == DEL_KEY {
 			editorMoveCursor(ARROW_RIGHT)
@@ -936,6 +942,7 @@ func editorRefreshScreen() {
 	editorDrawRows(ab)
 	editorDrawStatusBar(ab)
 	editorDrawMessageBar(ab)
+	editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit")
 	ab.WriteString(fmt.Sprintf("\x1b[%d;%dH", (E.cy-E.rowoff)+1, (E.rx-E.coloff)+1))
 	ab.WriteString("\x1b[?25h")
 	_, e := ab.WriteTo(os.Stdout)
@@ -945,11 +952,12 @@ func editorRefreshScreen() {
 }
 
 func editorDrawRows(ab *bytes.Buffer) {
+
 	for y := 0; y < E.screenRows; y++ {
 		filerow := y + E.rowoff
 		if filerow >= E.numRows {
 			if E.numRows == 0 && y == E.screenRows/3 {
-				w := fmt.Sprintf("Kilo editor -- version %s", KILO_VERSION)
+				w := fmt.Sprintf("TSignature Editor -- version %s", KILO_VERSION)
 				if len(w) > E.screenCols {
 					w = w[0:E.screenCols]
 				}
@@ -1011,7 +1019,8 @@ func editorDrawRows(ab *bytes.Buffer) {
 }
 
 func editorDrawStatusBar(ab *bytes.Buffer) {
-	ab.WriteString("\x1b[7m")
+	// ab.WriteString("\x1b[7m")
+	ab.WriteString("\x1b[41m")
 	fname := E.filename
 	if fname == "" {
 		fname = " Edit Auto Sig"
@@ -1088,5 +1097,10 @@ func Start(signature string) {
 	for {
 		editorRefreshScreen()
 		editorProcessKeypress()
+		if exit == 1 {
+			break
+		}
 	}
+	return
+
 }
