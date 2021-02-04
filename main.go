@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -67,6 +69,20 @@ func checkError(err error) {
 	// catch db errors
 }
 
+func showArt(menu string) {
+
+	var b bytes.Buffer
+	file := (menu + ".ans")
+	art, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	b.Write([]byte(art))
+	b.WriteTo(os.Stdout)
+	fmt.Printf("\r\n")
+	return
+}
+
 func replaceColors(currentSig string) string {
 
 	r := strings.NewReplacer(
@@ -86,7 +102,7 @@ func replaceColors(currentSig string) string {
 		"|13", fgMagentaBr,
 		"|14", fgYellowBr,
 		"|15", fgWhiteBr,
-		"\r", "\r\n")
+		"\r", "\r\n  ")
 
 	return r.Replace(currentSig)
 
@@ -96,7 +112,6 @@ func sigWithPipes(currentSig string) string {
 
 	r := strings.NewReplacer(
 		"\r", "\r\n")
-
 	return r.Replace(currentSig)
 
 }
@@ -136,11 +151,9 @@ func dropFileData() {
 
 	count := 0
 	for _, eachLn := range text {
-
 		if count == 35 {
 			// fmt.Printf("Name: %v\r\n", eachLn)
 			name = eachLn
-
 		}
 		if count == 25 {
 			// fmt.Printf("Id: %v\r\n", eachLn)
@@ -180,81 +193,54 @@ func main() {
 
 	go dropFileData()
 	time.Sleep(100 * time.Millisecond)
-
 	db, _ := sql.Open("sqlite3", "/home/robbiew/bbs/data/users.sqlite3") // Open the SQLite File
-
-	currentSig := getUsers(db, id)
-
-	fmt.Println("\033[H\033[2J")
-	fmt.Printf("Your current Auto Signature:\r\n\n")
-
-	sigPipes := sigWithPipes(currentSig.value)
-
-	sigEscapes := replaceColors(currentSig.value)
-	fmt.Println(sigEscapes)
-
-	fmt.Println("\u001b[0m")
-
 	errorChan := make(chan error)
 	dataChan := make(chan []byte)
 
-	go readWrapper(dataChan, errorChan)
-	// r := bytes.NewBuffer(make([]byte, 0, 1024))
+	currentSig := getUsers(db, id)
+	sigPipes := sigWithPipes(currentSig.value)
+	sigEscapes := replaceColors(currentSig.value)
 
-	fmt.Printf("(E) Edit\r\n")
-	fmt.Printf("(Q) Quit\r\n\n")
-	fmt.Printf("Cmd? ")
+	go readWrapper(dataChan, errorChan)
 
 	for {
+		fmt.Println("\033[H\033[2J")
+		showArt("header")
+		fmt.Printf(" \u001b[30;1m\u001b[0m+-------------------------------------------------\u001b[0m+\r\n")
+		fmt.Println("\u001b[2C")
+		fmt.Println(sigEscapes)
+		fmt.Printf("\u001b[1D\u001b[30;1m\u001b[0m+-------------------------------------------------\u001b[0m+\r\n\n")
+		fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit\u001b[0m\r\n")
+		fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit\u001b[0m\r\n")
+		fmt.Printf("\033[?25l")
 		select {
 		case data := <-dataChan:
 			if menu == 1 {
 				t := strings.TrimSuffix(strings.TrimSuffix(string(data), "\r\n"), "\n")
 				switch t {
-				// default:
-				// 	fmt.Println("client hit invalid key...")
 				case "Q", "q":
-					kilo.Start(sigPipes)
-					fmt.Println("\033[H\033[2J")
-					fmt.Printf("Your current Auto Signature:\r\n\n")
-					replaced := replaceColors(currentSig.value)
-					fmt.Println(replaced)
-
-					fmt.Println("\u001b[0m")
-
-					fmt.Printf("(E) Edit\r\n")
-					fmt.Printf("(Q) Quit\r\n\n")
-					fmt.Printf("Cmd? ")
 					menu = 2
+					os.Exit(0)
 				case "E", "e":
-					kilo.Start(sigPipes)
-					fmt.Println("\033[H\033[2J")
-					fmt.Printf("Your current Auto Signature:\r\n\n")
-					replaced := replaceColors(currentSig.value)
-					fmt.Println(replaced)
+					menu = 3
 
-					fmt.Println("\u001b[0m")
-
-					fmt.Printf("(E) Edit\r\n")
-					fmt.Printf("(Q) Quit\r\n\n")
-					fmt.Printf("Cmd? ")
-					menu = 1
 				}
-				continue
 			}
 			if menu == 2 {
-				fmt.Printf("\r\n\nReturning...\r\n")
-				time.Sleep(200 * time.Millisecond)
 				os.Exit(0)
 			}
+			if menu == 3 {
+				kilo.Start(sigPipes)
+				sigPipes = ""
+				menu = 1
+			}
+			continue
 
 		case err := <-errorChan:
 			log.Println("An error occured:", err.Error())
 			return
 		}
-		break
+
 	}
-	fmt.Printf("\r\n\nReturning...\r\n")
-	time.Sleep(200 * time.Millisecond)
 
 }
