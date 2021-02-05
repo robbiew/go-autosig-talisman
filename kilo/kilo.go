@@ -18,7 +18,7 @@ import (
 
 const KILO_VERSION = "0.0.1"
 const KILO_TAB_STOP = 8
-const KILO_QUIT_TIMES = 3
+const KILO_QUIT_TIMES = 1
 const (
 	BACKSPACE   = 127
 	ARROW_LEFT  = 1000 + iota
@@ -860,7 +860,7 @@ func editorProcessKeypress() {
 		break
 	case ('q' & 0x1f):
 		if E.dirty && quitTimes > 0 {
-			editorSetStatusMessage("Warning!!! File has unsaved changes. Press Ctrl-Q %d more times to quit.", quitTimes)
+			editorSetStatusMessage("Warning!!! File has unsaved changes. Press Ctrl-Q %d more time to quit.", quitTimes)
 			quitTimes--
 			return
 		}

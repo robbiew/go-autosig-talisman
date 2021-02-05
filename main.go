@@ -152,11 +152,10 @@ func dropFileData() {
 	count := 0
 	for _, eachLn := range text {
 		if count == 35 {
-			// fmt.Printf("Name: %v\r\n", eachLn)
 			name = eachLn
 		}
 		if count == 25 {
-			// fmt.Printf("Id: %v\r\n", eachLn)
+
 			idInt, err := strconv.Atoi(eachLn)
 			if err != nil {
 				fmt.Println(err)
@@ -178,19 +177,39 @@ func dropFileData() {
 // Main input loop
 func readWrapper(dataChan chan []byte, errorChan chan error) {
 
-	for {
-		buf := make([]byte, 1024)
-		reqLen, err := os.Stdin.Read(buf)
-		if err != nil {
-			errorChan <- err
-			return
-		}
-		dataChan <- buf[:reqLen]
+	buf := make([]byte, 1024)
+	reqLen, err := os.Stdin.Read(buf)
+	if err != nil {
+		errorChan <- err
+		return
 	}
+	dataChan <- buf[:reqLen]
+
+}
+
+func doEvery(d time.Duration, f func(time.Time)) {
+	for x := range time.Tick(d) {
+		f(x)
+	}
+}
+
+func anyoneThere(t time.Time) {
+
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		panic(err)
+	}
+	if fi.Size() > 0 {
+		fmt.Println("\u001b[1;1HSomething here")
+	} else {
+		fmt.Println("\u001b[1;1Hempty")
+	}
+
 }
 
 func main() {
 
+	// go doEvery(1*time.Second, anyoneThere)
 	go dropFileData()
 	time.Sleep(100 * time.Millisecond)
 	db, _ := sql.Open("sqlite3", "/home/robbiew/bbs/data/users.sqlite3") // Open the SQLite File
@@ -201,9 +220,8 @@ func main() {
 	sigPipes := sigWithPipes(currentSig.value)
 	sigEscapes := replaceColors(currentSig.value)
 
-	go readWrapper(dataChan, errorChan)
-
 	for {
+		go readWrapper(dataChan, errorChan)
 		fmt.Println("\033[H\033[2J")
 		showArt("header")
 		fmt.Printf(" \u001b[30;1m\u001b[0m+-------------------------------------------------\u001b[0m+\r\n")
@@ -220,10 +238,8 @@ func main() {
 				switch t {
 				case "Q", "q":
 					menu = 2
-					os.Exit(0)
 				case "E", "e":
 					menu = 3
-
 				}
 			}
 			if menu == 2 {
