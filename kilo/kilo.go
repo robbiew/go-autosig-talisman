@@ -49,6 +49,7 @@ const (
 )
 
 var exit = 0
+var newSession int
 
 /*** data ***/
 
@@ -638,10 +639,14 @@ func editorRowsToString() (string, int) {
 
 func editorOpen(signature string) {
 
-	scanner := bufio.NewScanner(strings.NewReader(signature))
-	for scanner.Scan() {
-		editorInsertRow(E.numRows, []byte(scanner.Text()))
+	if newSession == 0 {
+
+		scanner := bufio.NewScanner(strings.NewReader(signature))
+		for scanner.Scan() {
+			editorInsertRow(E.numRows, []byte(scanner.Text()))
+		}
 	}
+
 	// E.filename = filename
 	// editorSelectSyntaxHighlight()
 	// fd, err := os.Open(filename)
@@ -662,14 +667,12 @@ func editorOpen(signature string) {
 	// 	editorInsertRow(E.numRows, line)
 	// }
 
-	// if err != nil && err != io.EOF {
-	// 	die(err)
-	// }
 	E.dirty = false
 }
 
 func editorSave() {
-	editorSetStatusMessage("Saving... CTRL-Q to Quit.")
+
+	editorSetStatusMessage(" Saving... CTRL-Q to Quit.")
 	E.dirty = false
 	// if E.filename == "" {
 	// 	E.filename = editorPrompt("Save as: %q", nil)
@@ -701,77 +704,77 @@ func editorSave() {
 
 /*** find ***/
 
-// var lastMatch int = -1
-// var direction int = 1
-// var savedHlLine int
-// var savedHl []byte
+var lastMatch int = -1
+var direction int = 1
+var savedHlLine int
+var savedHl []byte
 
-// func editorFindCallback(qry []byte, key int) {
+func editorFindCallback(qry []byte, key int) {
 
-// 	if savedHlLine > 0 {
-// 		copy(E.rows[savedHlLine].hl, savedHl)
-// 		savedHlLine = 0
-// 		savedHl = nil
-// 	}
+	if savedHlLine > 0 {
+		copy(E.rows[savedHlLine].hl, savedHl)
+		savedHlLine = 0
+		savedHl = nil
+	}
 
-// 	if key == '\r' || key == '\x1b' {
-// 		lastMatch = -1
-// 		direction = 1
-// 		return
-// 	} else if key == ARROW_RIGHT || key == ARROW_DOWN {
-// 		direction = 1
-// 	} else if key == ARROW_LEFT || key == ARROW_UP {
-// 		direction = -1
-// 	} else {
-// 		lastMatch = -1
-// 		direction = 1
-// 	}
+	if key == '\r' || key == '\x1b' {
+		lastMatch = -1
+		direction = 1
+		return
+	} else if key == ARROW_RIGHT || key == ARROW_DOWN {
+		direction = 1
+	} else if key == ARROW_LEFT || key == ARROW_UP {
+		direction = -1
+	} else {
+		lastMatch = -1
+		direction = 1
+	}
 
-// 	if lastMatch == -1 {
-// 		direction = 1
-// 	}
-// 	current := lastMatch
+	if lastMatch == -1 {
+		direction = 1
+	}
+	current := lastMatch
 
-// 	for _ = range E.rows {
-// 		current += direction
-// 		if current == -1 {
-// 			current = E.numRows - 1
-// 		} else if current == E.numRows {
-// 			current = 0
-// 		}
-// 		row := &E.rows[current]
-// 		x := bytes.Index(row.render, qry)
-// 		if x > -1 {
-// 			lastMatch = current
-// 			E.cy = current
-// 			E.cx = editorRowRxToCx(row, x)
-// 			E.rowoff = E.numRows
-// 			savedHlLine = current
-// 			savedHl = make([]byte, row.rsize)
-// 			copy(savedHl, row.hl)
-// 			max := x + len(qry)
-// 			for i := x; i < max; i++ {
-// 				row.hl[i] = HL_MATCH
-// 			}
-// 			break
-// 		}
-// 	}
-// }
+	for _ = range E.rows {
+		current += direction
+		if current == -1 {
+			current = E.numRows - 1
+		} else if current == E.numRows {
+			current = 0
+		}
+		row := &E.rows[current]
+		x := bytes.Index(row.render, qry)
+		if x > -1 {
+			lastMatch = current
+			E.cy = current
+			E.cx = editorRowRxToCx(row, x)
+			E.rowoff = E.numRows
+			savedHlLine = current
+			savedHl = make([]byte, row.rsize)
+			copy(savedHl, row.hl)
+			max := x + len(qry)
+			for i := x; i < max; i++ {
+				row.hl[i] = HL_MATCH
+			}
+			break
+		}
+	}
+}
 
-// func editorFind() {
-// 	savedCx := E.cx
-// 	savedCy := E.cy
-// 	savedColoff := E.coloff
-// 	savedRowoff := E.rowoff
-// 	query := editorPrompt("Search: %s (ESC/Arrows/Enter)",
-// 		editorFindCallback)
-// 	if query == "" {
-// 		E.cx = savedCx
-// 		E.cy = savedCy
-// 		E.coloff = savedColoff
-// 		E.rowoff = savedRowoff
-// 	}
-// }
+func editorFind() {
+	savedCx := E.cx
+	savedCy := E.cy
+	savedColoff := E.coloff
+	savedRowoff := E.rowoff
+	query := editorPrompt("Search: %s (ESC/Arrows/Enter)",
+		editorFindCallback)
+	if query == "" {
+		E.cx = savedCx
+		E.cy = savedCy
+		E.coloff = savedColoff
+		E.rowoff = savedRowoff
+	}
+}
 
 /*** input ***/
 
@@ -867,6 +870,7 @@ func editorProcessKeypress() {
 		io.WriteString(os.Stdout, "\x1b[2J")
 		io.WriteString(os.Stdout, "\x1b[H")
 		disableRawMode()
+
 		// os.Exit(0)
 		exit = 1
 		break
@@ -942,7 +946,7 @@ func editorRefreshScreen() {
 	editorDrawRows(ab)
 	editorDrawStatusBar(ab)
 	editorDrawMessageBar(ab)
-	editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit")
+	editorSetStatusMessage(" Ctrl-S = save | Ctrl-Q = quit")
 	ab.WriteString(fmt.Sprintf("\x1b[%d;%dH", (E.cy-E.rowoff)+1, (E.rx-E.coloff)+1))
 	ab.WriteString("\x1b[?25h")
 	_, e := ab.WriteTo(os.Stdout)
@@ -1082,6 +1086,7 @@ func initEditor() {
 
 // Start launces the editor
 func Start(signature string) {
+	exit = 0
 	enableRawMode()
 	defer disableRawMode()
 	initEditor()
@@ -1092,12 +1097,13 @@ func Start(signature string) {
 	editorOpen(signature)
 
 	// editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find")
-	editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit")
+	editorSetStatusMessage(" Ctrl-S = save | Ctrl-Q = quit")
 
 	for {
 		editorRefreshScreen()
 		editorProcessKeypress()
 		if exit == 1 {
+			newSession = 1
 			break
 		}
 	}

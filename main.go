@@ -17,10 +17,14 @@ import (
 )
 
 var (
-	name   string
-	id     int
-	menu   = 1
-	newSig string
+	name       string
+	id         int
+	menu       string
+	dataType   string
+	newSig     string
+	sigPipes   string
+	currentSig User
+	exit       int
 
 	reset = "\u001b[0m"
 
@@ -176,15 +180,16 @@ func dropFileData() {
 
 // Main input loop
 func readWrapper(dataChan chan []byte, errorChan chan error) {
+	for {
 
-	buf := make([]byte, 1024)
-	reqLen, err := os.Stdin.Read(buf)
-	if err != nil {
-		errorChan <- err
-		return
+		buf := make([]byte, 1024)
+		reqLen, err := os.Stdin.Read(buf)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+		dataChan <- buf[:reqLen]
 	}
-	dataChan <- buf[:reqLen]
-
 }
 
 func doEvery(d time.Duration, f func(time.Time)) {
@@ -216,12 +221,15 @@ func main() {
 	errorChan := make(chan error)
 	dataChan := make(chan []byte)
 
-	currentSig := getUsers(db, id)
-	sigPipes := sigWithPipes(currentSig.value)
-	sigEscapes := replaceColors(currentSig.value)
+	menu = "main"
+	dataType = "key"
+
+	go readWrapper(dataChan, errorChan)
 
 	for {
-		go readWrapper(dataChan, errorChan)
+		currentSig := getUsers(db, id)
+		sigPipes := sigWithPipes(currentSig.value)
+		sigEscapes := replaceColors(currentSig.value)
 		fmt.Println("\033[H\033[2J")
 		showArt("header")
 		fmt.Printf(" \u001b[30;1m\u001b[0m+-------------------------------------------------\u001b[0m+\r\n")
@@ -231,32 +239,40 @@ func main() {
 		fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit\u001b[0m\r\n")
 		fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit\u001b[0m\r\n")
 		fmt.Printf("\033[?25l")
+
 		select {
 		case data := <-dataChan:
-			if menu == 1 {
-				t := strings.TrimSuffix(strings.TrimSuffix(string(data), "\r\n"), "\n")
-				switch t {
-				case "Q", "q":
-					menu = 2
-				case "E", "e":
-					menu = 3
+			t := strings.TrimSuffix(strings.TrimSuffix(string(data), "\r\n"), "\n")
+			if dataType == "key" {
+				if menu == "main" {
+					switch t {
+					case "Q", "q":
+						menu = "quit"
+					case "E", "e":
+						dataType = "typed"
+						menu = "edit"
+					}
 				}
 			}
-			if menu == 2 {
-				os.Exit(0)
+			if dataType == "typed" {
+				if menu == "edit" {
+					kilo.Start(sigPipes)
+					dataType = "key"
+					menu = "main"
+				}
 			}
-			if menu == 3 {
-				kilo.Start(sigPipes)
-				sigPipes = ""
-				menu = 1
+			// fall through statement to close connection
+			if menu == "quit" {
+				break
 			}
 			continue
-
 		case err := <-errorChan:
 			log.Println("An error occured:", err.Error())
 			return
 		}
-
+		fmt.Println("\r\nClosing")
+		time.Sleep(500 * time.Millisecond)
+		break
 	}
-
+	os.Exit(0)
 }
