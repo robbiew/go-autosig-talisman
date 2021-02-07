@@ -180,16 +180,15 @@ func dropFileData() {
 
 // Main input loop
 func readWrapper(dataChan chan []byte, errorChan chan error) {
-	for {
 
-		buf := make([]byte, 1024)
-		reqLen, err := os.Stdin.Read(buf)
-		if err != nil {
-			errorChan <- err
-			return
-		}
-		dataChan <- buf[:reqLen]
+	buf := make([]byte, 1024)
+	reqLen, err := os.Stdin.Read(buf)
+	if err != nil {
+		errorChan <- err
+		return
 	}
+	dataChan <- buf[:reqLen]
+
 }
 
 func doEvery(d time.Duration, f func(time.Time)) {
@@ -224,9 +223,8 @@ func main() {
 	menu = "main"
 	dataType = "key"
 
-	go readWrapper(dataChan, errorChan)
-
 	for {
+		go readWrapper(dataChan, errorChan)
 		currentSig := getUsers(db, id)
 		sigPipes := sigWithPipes(currentSig.value)
 		sigEscapes := replaceColors(currentSig.value)
