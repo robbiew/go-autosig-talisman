@@ -17,14 +17,16 @@ import (
 )
 
 var (
-	name       string
-	id         int
-	menu       string
-	dataType   string
-	newSig     string
-	sigPipes   string
-	currentSig User
-	exit       int
+	name        string
+	id          int
+	menu        string
+	dataType    string
+	newSig      string
+	updatedSig  string
+	newSigPipes string
+	sigPipes    string
+	currentSig  User
+	exit        int
 
 	reset = "\u001b[0m"
 
@@ -106,7 +108,8 @@ func replaceColors(currentSig string) string {
 		"|13", fgMagentaBr,
 		"|14", fgYellowBr,
 		"|15", fgWhiteBr,
-		"\r", "\r\n  ")
+		"\r", "\r\n ",
+		"\n", "\r\n ")
 
 	return r.Replace(currentSig)
 
@@ -230,13 +233,28 @@ func main() {
 		sigEscapes := replaceColors(currentSig.value)
 		fmt.Println("\033[H\033[2J")
 		showArt("header")
-		fmt.Printf(" \u001b[30;1m\u001b[0m+-------------------------------------------------\u001b[0m+\r\n")
-		fmt.Println("\u001b[2C")
-		fmt.Println(sigEscapes)
-		fmt.Printf("\u001b[1D\u001b[30;1m\u001b[0m+-------------------------------------------------\u001b[0m+\r\n\n")
-		fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit\u001b[0m\r\n")
-		fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit\u001b[0m\r\n")
-		fmt.Printf("\033[?25l")
+
+		newSigEscapes := replaceColors(updatedSig)
+		// newSigPipes = newSigWithPipes(newSigEscapes)
+
+		if len(newSigEscapes) > 0 {
+			fmt.Printf(" NEW Auto Signature:\r\n")
+			fmt.Println("\u001b[1C")
+			fmt.Println(newSigEscapes)
+			fmt.Printf("\r\n")
+			fmt.Printf(" \u001b[31m(\u001b[31;1mS\u001b[0m\u001b[31m) \u001b[31mSave & Keep\u001b[0m\r\n")
+			// fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit Again\u001b[0m\r\n")
+			fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit/Don't Save\u001b[0m\r\n")
+			fmt.Printf("\033[?25l")
+		} else {
+			fmt.Printf(" Current Auto Signature:\r\n")
+			fmt.Println("\u001b[1C")
+			fmt.Println(sigEscapes)
+			fmt.Printf("\r\n")
+			fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit\u001b[0m\r\n")
+			fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit\u001b[0m\r\n")
+			fmt.Printf("\033[?25l")
+		}
 
 		select {
 		case data := <-dataChan:
@@ -249,12 +267,14 @@ func main() {
 					case "E", "e":
 						dataType = "typed"
 						menu = "edit"
+					case "S", "s":
+						menu = "save"
 					}
 				}
 			}
 			if dataType == "typed" {
 				if menu == "edit" {
-					kilo.Start(sigPipes)
+					updatedSig = kilo.Start(sigPipes)
 					dataType = "key"
 					menu = "main"
 				}
@@ -263,13 +283,18 @@ func main() {
 			if menu == "quit" {
 				break
 			}
+			if menu == "save" {
+				fmt.Printf("\r\n %vSaving %v%v%v%v's Auto Signature...%v", fgRedBr, reset, fgRed, name, fgRedBr, reset)
+				time.Sleep(700 * time.Millisecond)
+				break
+			}
 			continue
 		case err := <-errorChan:
 			log.Println("An error occured:", err.Error())
 			return
 		}
-		fmt.Println("\r\nClosing")
-		time.Sleep(500 * time.Millisecond)
+		fmt.Printf("\r\n %vReturning to BBS...%v", fgCyan, reset)
+		time.Sleep(700 * time.Millisecond)
 		break
 	}
 	os.Exit(0)

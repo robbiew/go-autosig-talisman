@@ -49,6 +49,7 @@ const (
 )
 
 var exit = 0
+var savedSig string
 
 // var newSession int
 
@@ -680,6 +681,11 @@ func editorOpen(signature string) {
 func editorSave() {
 
 	editorSetStatusMessage(" Saving... CTRL-Q to Quit.")
+
+	buf, len := editorRowsToString()
+	savedSig = buf
+	log.Println(len)
+
 	E.dirty = false
 	// if E.filename == "" {
 	// 	E.filename = editorPrompt("Save as: %q", nil)
@@ -1091,7 +1097,7 @@ func initEditor() {
 }
 
 // Start launces the editor
-func Start(signature string) {
+func Start(signature string) string {
 
 	exit = 0
 	enableRawMode()
@@ -1111,9 +1117,8 @@ func Start(signature string) {
 		editorRefreshScreen()
 		editorProcessKeypress()
 		if exit == 1 {
-			break
-
+			return savedSig
 		}
 	}
-	return
+
 }
