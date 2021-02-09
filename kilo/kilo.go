@@ -49,7 +49,8 @@ const (
 )
 
 var exit = 0
-var newSession int
+
+// var newSession int
 
 /*** data ***/
 
@@ -639,12 +640,18 @@ func editorRowsToString() (string, int) {
 
 func editorOpen(signature string) {
 
-	if newSession == 0 {
-
-		scanner := bufio.NewScanner(strings.NewReader(signature))
-		for scanner.Scan() {
-			editorInsertRow(E.numRows, []byte(scanner.Text()))
+	d := 0
+	if E.numRows > 0 {
+		for d < E.numRows {
+			editorDelRow(d)
 		}
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(signature))
+	i := 0
+	for scanner.Scan() {
+		editorInsertRow(i, []byte(scanner.Text()))
+		i++
 	}
 
 	// E.filename = filename
@@ -784,7 +791,6 @@ func editorPrompt(prompt string, callback func([]byte, int)) string {
 	for {
 		editorSetStatusMessage(prompt, buf)
 		editorRefreshScreen()
-
 		c := editorReadKey()
 
 		if c == DEL_KEY || c == ('h'&0x1f) || c == BACKSPACE {
@@ -870,7 +876,6 @@ func editorProcessKeypress() {
 		io.WriteString(os.Stdout, "\x1b[2J")
 		io.WriteString(os.Stdout, "\x1b[H")
 		disableRawMode()
-
 		// os.Exit(0)
 		exit = 1
 		break
@@ -940,6 +945,7 @@ func editorScroll() {
 }
 
 func editorRefreshScreen() {
+
 	editorScroll()
 	ab := bytes.NewBufferString("\x1b[25l")
 	ab.WriteString("\x1b[H")
@@ -961,7 +967,7 @@ func editorDrawRows(ab *bytes.Buffer) {
 		filerow := y + E.rowoff
 		if filerow >= E.numRows {
 			if E.numRows == 0 && y == E.screenRows/3 {
-				w := fmt.Sprintf("TSignature Editor -- version %s", KILO_VERSION)
+				w := fmt.Sprintf("AutoSig Editor -- version %s", KILO_VERSION)
 				if len(w) > E.screenCols {
 					w = w[0:E.screenCols]
 				}
@@ -1086,6 +1092,7 @@ func initEditor() {
 
 // Start launces the editor
 func Start(signature string) {
+
 	exit = 0
 	enableRawMode()
 	defer disableRawMode()
@@ -1100,13 +1107,13 @@ func Start(signature string) {
 	editorSetStatusMessage(" Ctrl-S = save | Ctrl-Q = quit")
 
 	for {
+		disableRawMode()
 		editorRefreshScreen()
 		editorProcessKeypress()
 		if exit == 1 {
-			newSession = 1
 			break
+
 		}
 	}
 	return
-
 }
