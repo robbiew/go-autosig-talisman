@@ -151,7 +151,15 @@ func updateUser(db *sql.DB, id int, value string, attrib string) {
 
 func dropFileData() {
 
-	file, err := os.Open("/home/robbiew/bbs/temp/1/door.sys")
+	node := os.Args[1]
+
+	if node == "" {
+		log.Println("Node number not found in command line argument")
+		os.Exit(0)
+
+	}
+
+	file, err := os.Open("/home/robbiew/bbs/temp/" + node + "/door.sys")
 	if err != nil {
 		log.Fatal(err)
 	}
