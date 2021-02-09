@@ -17,16 +17,14 @@ import (
 )
 
 var (
-	name        string
-	id          int
-	menu        string
-	dataType    string
-	newSig      string
-	updatedSig  string
-	newSigPipes string
-	sigPipes    string
-	currentSig  User
-	exit        int
+	name       string
+	id         int
+	menu       string
+	dataType   string
+	updatedSig string
+	sigPipes   string
+	currentSig User
+	exit       int
 
 	reset = "\u001b[0m"
 
@@ -69,7 +67,9 @@ type User struct {
 }
 
 func checkError(err error) {
+
 	if err != nil {
+		log.Println(err)
 		panic(err)
 	}
 	// catch db errors
@@ -124,8 +124,10 @@ func sigWithPipes(currentSig string) string {
 }
 
 func getUsers(db *sql.DB, id2 int) User {
+
 	rows, err := db.Query(`select * from details where attrib = 'signature'`)
 	checkError(err)
+	defer rows.Close()
 	for rows.Next() {
 		var tempUser User
 		err =
@@ -135,8 +137,16 @@ func getUsers(db *sql.DB, id2 int) User {
 		if tempUser.uid == id2 {
 			return tempUser
 		}
+		rows.Close()
 	}
 	return User{}
+}
+
+func updateUser(db *sql.DB, id int, value string, attrib string) {
+
+	stmt, _ := db.Prepare(`update details set value=? where uid=? AND attrib=?`)
+	_, err := stmt.Exec(updatedSig, id, attrib)
+	checkError(err)
 }
 
 func dropFileData() {
@@ -211,7 +221,6 @@ func anyoneThere(t time.Time) {
 	} else {
 		fmt.Println("\u001b[1;1Hempty")
 	}
-
 }
 
 func main() {
@@ -235,7 +244,6 @@ func main() {
 		showArt("header")
 
 		newSigEscapes := replaceColors(updatedSig)
-		// newSigPipes = newSigWithPipes(newSigEscapes)
 
 		if len(newSigEscapes) > 0 {
 			fmt.Printf(" NEW Auto Signature:\r\n")
@@ -243,7 +251,6 @@ func main() {
 			fmt.Println(newSigEscapes)
 			fmt.Printf("\r\n")
 			fmt.Printf(" \u001b[31m(\u001b[31;1mS\u001b[0m\u001b[31m) \u001b[31mSave & Keep\u001b[0m\r\n")
-			// fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit Again\u001b[0m\r\n")
 			fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit/Don't Save\u001b[0m\r\n")
 			fmt.Printf("\033[?25l")
 		} else {
@@ -285,7 +292,9 @@ func main() {
 			}
 			if menu == "save" {
 				fmt.Printf("\r\n %vSaving %v%v%v%v's Auto Signature...%v", fgRedBr, reset, fgRed, name, fgRedBr, reset)
-				time.Sleep(700 * time.Millisecond)
+				updateUser(db, id, updatedSig, "signature")
+				time.Sleep(400 * time.Millisecond)
+				log.Printf("%v (id: %v) updated signature", name, id)
 				break
 			}
 			continue
@@ -294,8 +303,9 @@ func main() {
 			return
 		}
 		fmt.Printf("\r\n %vReturning to BBS...%v", fgCyan, reset)
-		time.Sleep(700 * time.Millisecond)
+		time.Sleep(400 * time.Millisecond)
 		break
 	}
+	db.Close()
 	os.Exit(0)
 }
