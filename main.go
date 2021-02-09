@@ -184,7 +184,6 @@ func dropFileData() {
 		}
 		count++
 	}
-
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
@@ -201,31 +200,10 @@ func readWrapper(dataChan chan []byte, errorChan chan error) {
 		return
 	}
 	dataChan <- buf[:reqLen]
-
-}
-
-func doEvery(d time.Duration, f func(time.Time)) {
-	for x := range time.Tick(d) {
-		f(x)
-	}
-}
-
-func anyoneThere(t time.Time) {
-
-	fi, err := os.Stdin.Stat()
-	if err != nil {
-		panic(err)
-	}
-	if fi.Size() > 0 {
-		fmt.Println("\u001b[1;1HSomething here")
-	} else {
-		fmt.Println("\u001b[1;1Hempty")
-	}
 }
 
 func main() {
 
-	// go doEvery(1*time.Second, anyoneThere)
 	go dropFileData()
 	time.Sleep(100 * time.Millisecond)
 	db, _ := sql.Open("sqlite3", "/home/robbiew/bbs/data/users.sqlite3") // Open the SQLite File
@@ -301,9 +279,13 @@ func main() {
 		case err := <-errorChan:
 			log.Println("An error occured:", err.Error())
 			return
+		case <-time.After(1 * time.Minute):
+			fmt.Println("\r\n Timed out!")
+			break
 		}
+
 		fmt.Printf("\r\n %vReturning to BBS...%v", fgCyan, reset)
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		break
 	}
 	db.Close()

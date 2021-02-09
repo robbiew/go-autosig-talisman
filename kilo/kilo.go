@@ -867,16 +867,28 @@ func editorMoveCursor(key int) {
 
 var quitTimes int = KILO_QUIT_TIMES
 
-func editorProcessKeypress() {
+func editorProcessKeypress(shortTimer *time.Timer) {
+	shortTimer.Stop()
+
+	shortTimer = NewTimer(120, func() {
+		log.Printf("120 second NewTimer() timer finished.\n")
+		log.Println("activeUser = false, exiting")
+		editorSetStatusMessage("You've been idle for 2 minutes... exiting!")
+		time.Sleep(500 * time.Millisecond)
+		os.Exit(0)
+	})
+
 	c := editorReadKey()
 	switch c {
 	case '\r':
 		editorInsertNewLine()
+		shortTimer.Stop()
 		break
 	case ('q' & 0x1f):
 		if E.dirty && quitTimes > 0 {
 			editorSetStatusMessage("Warning!!! File has unsaved changes. Press Ctrl-Q %d more time to quit.", quitTimes)
 			quitTimes--
+			shortTimer.Stop()
 			return
 		}
 		io.WriteString(os.Stdout, "\x1b[2J")
@@ -898,6 +910,7 @@ func editorProcessKeypress() {
 	case ('h' & 0x1f), BACKSPACE, DEL_KEY:
 		if c == DEL_KEY {
 			editorMoveCursor(ARROW_RIGHT)
+			shortTimer.Stop()
 		}
 		editorDelChar()
 		break
@@ -914,15 +927,18 @@ func editorProcessKeypress() {
 		}
 		for times := E.screenRows; times > 0; times-- {
 			editorMoveCursor(dir)
+			shortTimer.Stop()
 		}
 	case ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT:
 		editorMoveCursor(c)
+		shortTimer.Stop()
 	case ('l' & 0x1f):
 		break
 	case '\x1b':
 		break
 	default:
 		editorInsertChar(byte(c))
+		shortTimer.Stop()
 	}
 	quitTimes = KILO_QUIT_TIMES
 }
@@ -961,6 +977,7 @@ func editorRefreshScreen() {
 	editorSetStatusMessage(" Ctrl-S = save | Ctrl-Q = quit")
 	ab.WriteString(fmt.Sprintf("\x1b[%d;%dH", (E.cy-E.rowoff)+1, (E.rx-E.coloff)+1))
 	ab.WriteString("\x1b[?25h")
+
 	_, e := ab.WriteTo(os.Stdout)
 	if e != nil {
 		log.Fatal(e)
@@ -1094,6 +1111,18 @@ func initEditor() {
 		die(fmt.Errorf("couldn't get screen size"))
 	}
 	E.screenRows -= 2
+
+}
+
+// NewTimer boots a user after being idle too long
+func NewTimer(seconds int, action func()) *time.Timer {
+	timer := time.NewTimer(time.Second * time.Duration(seconds))
+
+	go func() {
+		<-timer.C
+		action()
+	}()
+	return timer
 }
 
 // Start launces the editor
@@ -1112,13 +1141,21 @@ func Start(signature string) string {
 	// editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find")
 	editorSetStatusMessage(" Ctrl-S = save | Ctrl-Q = quit")
 
+	log.Println("activeUser = true")
+	shortTimer := NewTimer(120, func() {
+		log.Printf("2m NewTimer() timer finished.\n")
+		log.Println("activeUser = false, exiting")
+		os.Exit(0)
+	})
+	defer shortTimer.Stop()
+
 	for {
+
 		disableRawMode()
 		editorRefreshScreen()
-		editorProcessKeypress()
+		editorProcessKeypress(shortTimer)
 		if exit == 1 {
 			return savedSig
 		}
 	}
-
 }
