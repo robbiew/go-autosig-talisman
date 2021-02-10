@@ -120,9 +120,16 @@ func replaceColors(currentSig string) string {
 	return r.Replace(currentSig)
 }
 
+func newUserSig(db *sql.DB, id int, value string) {
+
+	stmt, _ := db.Prepare(`INSERT INTO details (uid,attrib,value) VALUES (?,?,?)`)
+	_, err := stmt.Exec(id, "signature", updatedSig)
+	checkError(err)
+}
+
 func getUsers(db *sql.DB, id2 int) User {
 
-	rows, err := db.Query(`select * from details where attrib = 'signature'`)
+	rows, err := db.Query(`select * from details where attrib = 'signature' and uid=?`, id2)
 	checkError(err)
 	defer rows.Close()
 	for rows.Next() {
@@ -139,10 +146,10 @@ func getUsers(db *sql.DB, id2 int) User {
 	return User{}
 }
 
-func updateUser(db *sql.DB, id int, value string, attrib string) {
+func updateUser(db *sql.DB, id int, value string) {
 
 	stmt, _ := db.Prepare(`update details set value=? where uid=? AND attrib=?`)
-	_, err := stmt.Exec(updatedSig, id, attrib)
+	_, err := stmt.Exec(updatedSig, id, "signature")
 	checkError(err)
 }
 
@@ -270,9 +277,16 @@ func main() {
 			if menu == "save" {
 				fmt.Printf("\r\n %vSaving %v%v%v%v's Auto Signature...%v", fgRedBr, reset, fgRed, name, fgRedBr, reset)
 				newLines := addNewLines(updatedSig)
-				updateUser(db, id, newLines, "signature")
-				time.Sleep(400 * time.Millisecond)
-				log.Printf("%v (id: %v) updated signature", name, id)
+				time.Sleep(500 * time.Millisecond)
+
+				if sigPipes != "" {
+					updateUser(db, id, newLines)
+					log.Printf("%v (id: %v) updated signature", name, id)
+				} else {
+					newUserSig(db, id, newLines)
+					fmt.Printf("\r\n %vSignature doesn't exist... Adding%v", fgRed, reset)
+					time.Sleep(500 * time.Millisecond)
+				}
 				break
 			}
 			continue
