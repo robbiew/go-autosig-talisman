@@ -687,6 +687,7 @@ func editorSave() {
 	log.Println(len)
 
 	E.dirty = false
+	exit = 1
 	// if E.filename == "" {
 	// 	E.filename = editorPrompt("Save as: %q", nil)
 	// 	if E.filename == "" {
