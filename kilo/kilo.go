@@ -634,7 +634,7 @@ func editorRowsToString() (string, int) {
 	buf := ""
 	for _, row := range E.rows {
 		totlen += row.size + 1
-		buf += string(row.chars) + "\n"
+		buf += string(row.chars) + "\r\n"
 	}
 	return buf, totlen
 }

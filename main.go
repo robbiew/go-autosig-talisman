@@ -29,34 +29,34 @@ var (
 	reset = "\u001b[0m"
 
 	// Foreground ANSI colors
-	fgBlack   = "\u001b[30m"
-	fgRed     = "\u001b[31m"
-	fgGreen   = "\u001b[32m"
-	fgYellow  = "\u001b[33m"
-	fgBlue    = "\u001b[34m"
-	fgMagenta = "\u001b[35m"
-	fgCyan    = "\u001b[36m"
-	fgWhite   = "\u001b[37m"
+	fgBlack   = reset + "\u001b[30m"
+	fgRed     = reset + "\u001b[31m"
+	fgGreen   = reset + "\u001b[32m"
+	fgYellow  = reset + "\u001b[33m"
+	fgBlue    = reset + "\u001b[34m"
+	fgMagenta = reset + "\u001b[35m"
+	fgCyan    = reset + "\u001b[36m"
+	fgWhite   = reset + "\u001b[37m"
 
 	// Foreground ANSI colors, bright
-	fgBlackBr   = "\u001b[30;1m"
-	fgRedBr     = "\u001b[31;1m"
-	fgGreenBr   = "\u001b[32;1m"
-	fgYellowBr  = "\u001b[33;1m"
-	fgBlueBr    = "\u001b[34;1m"
-	fgMagentaBr = "\u001b[35;1m"
-	fgCyanBr    = "\u001b[36;1m"
-	fgWhiteBr   = "\u001b[37;1m"
+	fgBlackBr   = reset + "\u001b[30;1m"
+	fgRedBr     = reset + "\u001b[31;1m"
+	fgGreenBr   = reset + "\u001b[32;1m"
+	fgYellowBr  = reset + "\u001b[33;1m"
+	fgBlueBr    = reset + "\u001b[34;1m"
+	fgMagentaBr = reset + "\u001b[35;1m"
+	fgCyanBr    = reset + "\u001b[36;1m"
+	fgWhiteBr   = reset + "\u001b[37;1m"
 
-	// Background ANSU colors
-	bgBlack   = "\u001b[40m"
-	bgRed     = "\u001b[41m"
-	bgGreen   = "\u001b[42m"
-	bgYellow  = "\u001b[43m"
-	bgBlue    = "\u001b[44m"
-	bgMagenta = "\u001b[45m"
-	bgCyan    = "\u001b[46m"
-	bgWhite   = "\u001b[47m"
+	// Background ANSI colors
+	bgBlack   = reset + "\u001b[40m"
+	bgRed     = reset + "\u001b[41m"
+	bgGreen   = reset + "\u001b[42m"
+	bgYellow  = reset + "\u001b[43m"
+	bgBlue    = reset + "\u001b[44m"
+	bgMagenta = reset + "\u001b[45m"
+	bgCyan    = reset + "\u001b[46m"
+	bgWhite   = reset + "\u001b[47m"
 )
 
 // User struct for the database
@@ -89,6 +89,13 @@ func showArt(menu string) {
 	return
 }
 
+func addNewLines(signature string) string {
+	r := strings.NewReplacer(
+		" ", "|| char(10) ||",
+	)
+	return r.Replace(signature)
+}
+
 func replaceColors(currentSig string) string {
 
 	r := strings.NewReplacer(
@@ -108,19 +115,9 @@ func replaceColors(currentSig string) string {
 		"|13", fgMagentaBr,
 		"|14", fgYellowBr,
 		"|15", fgWhiteBr,
-		"\r", "\r\n ",
 		"\n", "\r\n ")
 
 	return r.Replace(currentSig)
-
-}
-
-func sigWithPipes(currentSig string) string {
-
-	r := strings.NewReplacer(
-		"\r", "\r\n")
-	return r.Replace(currentSig)
-
 }
 
 func getUsers(db *sql.DB, id2 int) User {
@@ -152,12 +149,6 @@ func updateUser(db *sql.DB, id int, value string, attrib string) {
 func dropFileData() {
 
 	node := os.Args[1]
-
-	if node == "" {
-		log.Println("Node number not found in command line argument")
-		os.Exit(0)
-
-	}
 
 	file, err := os.Open("/home/robbiew/bbs/temp/" + node + "/door.sys")
 	if err != nil {
@@ -224,7 +215,7 @@ func main() {
 	for {
 		go readWrapper(dataChan, errorChan)
 		currentSig := getUsers(db, id)
-		sigPipes := sigWithPipes(currentSig.value)
+		sigPipes := currentSig.value
 		sigEscapes := replaceColors(currentSig.value)
 		fmt.Println("\033[H\033[2J")
 		showArt("header")
@@ -234,18 +225,18 @@ func main() {
 		if len(newSigEscapes) > 0 {
 			fmt.Printf(" NEW Auto Signature:\r\n")
 			fmt.Println("\u001b[1C")
-			fmt.Println(newSigEscapes)
+			fmt.Println(newSigEscapes + reset)
 			fmt.Printf("\r\n")
-			fmt.Printf(" \u001b[31m(\u001b[31;1mS\u001b[0m\u001b[31m) \u001b[31mSave & Keep\u001b[0m\r\n")
-			fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit/Don't Save\u001b[0m\r\n")
+			fmt.Printf(" " + fgRed + "(" + fgRedBr + "S" + fgRed + ")" + fgRedBr + " Save/Keep" + reset + "\r\n")
+			fmt.Printf(" " + fgRed + "(" + fgRedBr + "Q" + fgRed + ")" + fgRedBr + " Quit/Abort" + reset + "\r\n")
 			fmt.Printf("\033[?25l")
 		} else {
 			fmt.Printf(" Current Auto Signature:\r\n")
 			fmt.Println("\u001b[1C")
-			fmt.Println(sigEscapes)
+			fmt.Println(sigEscapes + reset)
 			fmt.Printf("\r\n")
-			fmt.Printf(" \u001b[31m(\u001b[31;1mE\u001b[0m\u001b[31m) \u001b[31mEdit\u001b[0m\r\n")
-			fmt.Printf(" \u001b[31m(\u001b[31;1mQ\u001b[0m\u001b[31m) \u001b[31mQuit\u001b[0m\r\n")
+			fmt.Printf(" " + fgRed + "(" + fgRedBr + "E" + fgRed + ")" + fgRedBr + " Edit" + reset + "\r\n")
+			fmt.Printf(" " + fgRed + "(" + fgRedBr + "Q" + fgRed + ")" + fgRedBr + " Quit" + reset + "\r\n")
 			fmt.Printf("\033[?25l")
 		}
 
@@ -278,7 +269,8 @@ func main() {
 			}
 			if menu == "save" {
 				fmt.Printf("\r\n %vSaving %v%v%v%v's Auto Signature...%v", fgRedBr, reset, fgRed, name, fgRedBr, reset)
-				updateUser(db, id, updatedSig, "signature")
+				newLines := addNewLines(updatedSig)
+				updateUser(db, id, newLines, "signature")
 				time.Sleep(400 * time.Millisecond)
 				log.Printf("%v (id: %v) updated signature", name, id)
 				break
