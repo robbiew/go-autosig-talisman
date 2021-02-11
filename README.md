@@ -12,8 +12,9 @@ To set up:
 - Make sure [Talisman](https://talismanbbs.com/) is installed and working 😃
 - Compile the program (`go build .`) -- or, use the pre-built binary in this repo for Linux 64 only
 - Create /bbs/doors/autosig directory
-- Copy autosig (binary), header.ans, start.sh to the above directory 
-- Add this to a menu, and it edit path (e.g. this is in /bbs/menus/message.toml)
+- Copy autosig (binary), header.ans, start.sh to the above directory
+- Set executable permissions (`chmod +x autosig start.sh`)
+- Add AutoSig item to a Talisman menu, and its edit path (e.g. this located in /bbs/menus/message.toml if you want it on the Message Menu)
 
 ```
 [[menuitem]]
@@ -22,9 +23,9 @@ data = "/home/robbiew/bbs/doors/autosig/start.sh"
 hotkey = "Z"
 ```
 
-Talisman will automatically pass the node number to the start.sh file, and the autosig program will use this to grab the drop file (e.g. bbs/temp/$1/door.sys). The drop file contains the user's id and name, which will be used to retrieve the "signature" in Talisman's user database (sqlite3). If the signature value doesn't exist yet, it will create it. If it exists, it will updated it.
+Talisman will automatically pass the node number to the start.sh file, and the autosig program will use this to grab the drop file (e.g. bbs/temp/$1/door.sys). The drop file contains that node's logged-in user id and name, and the id will be used to retrieve the "signature" row in Talisman's user database (sqlite3). If the 'signature' value doesn't exist, it will create it on save. If it exists, it will updated it.
 
-For display purposes, the autosig program translates between color "pipe" codes (e.g. "|02") and actual ansi escape codes.
+For display purposes, the autosig program translates between color "pipe" codes (e.g. "|02") that Talisman uses internally, and actual ansi escape codes for display in the terminal program.
 
 I have not tested for background colors yet.
 
