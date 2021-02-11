@@ -1,7 +1,7 @@
 # autosig
 Auto Signature Mod for [Talisman BBS](https://talismanbbs.com/)
 
-This go-based program allows you to add an Auto Sig editor to you Talisman BBS -- as a door. 
+This simple, go-based program allows you to add an Auto Sig editor to your Talisman BBS menus -- as a door. 
 
 It incorporates a modified vesion of the [kilo editor](https://github.com/bediger4000/kilo-in-go). 
 
@@ -9,7 +9,8 @@ Note: it **won't compile on OSX**. In fact, I've only tested it on Linux 64 (Ubu
 
 To set up:
 
-- Compile the program (`go build .`) -- or, use the pre-built binary in this repo for Linux 64
+- Make sure [Talisman](https://talismanbbs.com/) is installed and working 😃
+- Compile the program (`go build .`) -- or, use the pre-built binary in this repo for Linux 64 only
 - Create /bbs/doors/autosig directory
 - Copy autosig (binary), header.ans, start.sh to the above directory 
 - Add this to a menu, and it edit path (e.g. this is in /bbs/menus/message.toml)
