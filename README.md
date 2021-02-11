@@ -28,9 +28,9 @@ For display purposes, the autosig program translates between color "pipe" codes 
 I have not tested for background colors yet.
 
 TO DO:
-[x] Publish on github
-[ ] Test on Windows, Pi
-[ ] Add way to add extended ansi characters, like blocks and lines...
-[ ] Allow for re-editing the sig before exiting
-[ ] Match the editor's style to Talisman's internal full-screen editor
+- [x] Publish on github
+- [ ] Test on Windows, Pi
+- [ ] Add way to add extended ansi characters, like blocks and lines...
+- [ ] Allow for re-editing the sig before exiting
+- [ ] Match the editor's style to Talisman's internal full-screen editor
 
