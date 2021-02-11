@@ -1,4 +1,4 @@
-# autosig editor for Talisman BBS
+# Auto Signature Editor for Talisman BBS
 Auto Signature Mod for [Talisman BBS](https://talismanbbs.com/)
 
 This simple, go-based program allows you to add an Auto Sig editor to your Talisman BBS menus -- as a door. 
