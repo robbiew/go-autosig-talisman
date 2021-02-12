@@ -157,7 +157,7 @@ func dropFileData() {
 
 	node := os.Args[1]
 
-	file, err := os.Open("/home/robbiew/bbs/temp/" + node + "/door.sys")
+	file, err := os.Open("../../temp/" + node + "/door.sys")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func main() {
 
 	go dropFileData()
 	time.Sleep(100 * time.Millisecond)
-	db, _ := sql.Open("sqlite3", "/home/robbiew/bbs/data/users.sqlite3") // Open the SQLite File
+	db, _ := sql.Open("sqlite3", "../../data/users.sqlite3") // Open the SQLite File
 	errorChan := make(chan error)
 	dataChan := make(chan []byte)
 
