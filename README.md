@@ -23,7 +23,9 @@ data = "/home/robbiew/bbs/doors/autosig/start.sh"
 hotkey = "Z"
 ```
 
-Talisman will automatically pass the node number to the start.sh file, and the autosig program will use this to grab the drop file (e.g. bbs/temp/$1/door.sys). The drop file contains that node's logged-in user id and name, and the id will be used to retrieve the "signature" row in Talisman's user database (sqlite3). If the 'signature' value doesn't exist, it will create it on save. If it exists, it will updated it.
+Talisman will automatically pass the node number to the start.sh file, and the autosig program will use this to grab the drop file (e.g. from  `../../temp/$1/door.sys`). The drop file contains that node's logged-in user id and name, and the id will be used to retrieve the "signature" row in Talisman's user database (sqlite3) (e.g. from `../../data/users.sqlite3`). 
+
+If the 'signature' value doesn't exist, it will create it on save. If it exists, it will updated it.
 
 For display purposes, the autosig program translates between color "pipe" codes (e.g. "|02") that Talisman uses internally, and actual ansi escape codes for display in the terminal program.
 
@@ -35,4 +37,3 @@ TO DO:
 - [ ] Add extended ansi characters, like blocks and lines...
 - [ ] Allow for re-editing the sig before exiting
 - [ ] Match the editor's style to Talisman's internal full-screen editor
-
