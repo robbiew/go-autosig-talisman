@@ -11,7 +11,7 @@ To set up:
 
 - Make sure [Talisman](https://talismanbbs.com/) is installed and working 😃
 - Compile the program (`go build .`) -- or, use the pre-built binary in this repo for Linux 64 only
-- Create /bbs/doors/autosig directory
+- Create /bbs/doors/autosig directory (or wherever Talisman is installed)
 - Copy autosig (binary), header.ans, start.sh to the above directory
 - Set executable permissions (`chmod +x autosig start.sh`)
 - Add AutoSig item to a Talisman menu, and its edit path (e.g. this located in /bbs/menus/message.toml if you want it on the Message Menu)
