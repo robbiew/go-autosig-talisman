@@ -5,7 +5,7 @@ This simple, go-based program allows you to add an Auto Sig editor to your Talis
 
 It incorporates a modified vesion of the [kilo editor](https://github.com/bediger4000/kilo-in-go). 
 
-I've only tested this on Linux 64 (Ubuntu 20.04). It's *possible* that it will compile and run on Windows and Raspbery Pi...
+I've only tested this on Linux 64 (Ubuntu 20.04). Won't work on Windows.
 
 To set up:
 
